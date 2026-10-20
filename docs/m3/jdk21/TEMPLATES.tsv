@@ -1,0 +1,41 @@
+template	regex	interface_or_api	enhance_target	programme_rule
+T01	addDisposeListener|DisposeListener	org.eclipse.swt.events.DisposeListener	LIFECYCLE_RESIDENCY	M3 object residency law: parent-owned, lazy, LRU swap
+T02	addModifyListener|addVerifyListener|ModifyListener|VerifyListener	org.eclipse.swt.events.ModifyListener	TEXT_INPUT_DEBOUNCE	superseding-generation debounce; delta input lane
+T03	widgetSelectedAdapter|widgetDefaultSelectedAdapter|addSelectionListener	org.eclipse.swt.events.SelectionListener	SELECTION_LANE	one selection lane in the model (rule 26)
+T04	addSelectionChangedListener|addPostSelectionChangedListener|ISelectionChangedListener	org.eclipse.jface.viewers.ISelectionChangedListener	VIEWER_SELECTION_DELTA	JFace forwards to the widget selection lane
+T05	addDoubleClickListener|addOpenListener|IDoubleClickListener|IOpenListener	org.eclipse.jface.viewers.IOpenListener	VIEWER_OPEN	JFace forwards to the widget
+T06	addPropertyListener|IPropertyListener|setPropertyChangeListener|addPropertyChangeListener|IPropertyChangeListener|addPreferenceChangeListener|IPreferenceChangeListener	org.eclipse.jface.util.IPropertyChangeListener	PROPERTY_DELTA_SOURCE	change-source adapter (rule 27)
+T07	addResourceChangeListener|IResourceChangeListener|IResourceDeltaVisitor|IResourceProxyVisitor	org.eclipse.core.resources.IResourceChangeListener	RESOURCE_DELTA_ADAPTER	markers/resources change-source adapter (rule 27)
+T08	asyncExec|syncExec|timerExec	org.eclipse.swt.widgets.Display	UI_THREAD_SYNCHRONIZER	keyed coalescing Synchronizer (rule 28)
+T09	runInWorkspace|performUpdate|WorkspaceModifyOperation|Job\.create|Job\.createSystem|IWorkspaceRunnable|busyCursorWhile|ICoreRunnable|IRunnableWithProgress|WorkspaceJob|UIJob|SafeRunner|\.run\(	org.eclipse.core.runtime.jobs.Job	BACKGROUND_MODEL_THREAD	model threads produce patches, UI applies one per frame (rule 28)
+T10	addPaintListener|PaintListener|paintControl	org.eclipse.swt.events.PaintListener	PAINT_DAMAGE	damage regions, drawn modes, hidden viewport dirty (rule 24)
+T11	addControlListener|controlResizedAdapter|controlMovedAdapter|ControlListener	org.eclipse.swt.events.ControlListener	VIEWPORT_RESIZE_DELTA	resize/layout as viewport delta (rule 24)
+T12	addKeyListener|keyPressedAdapter|keyReleasedAdapter|addMouseListener|mouseDownAdapter|mouseUpAdapter|mouseDoubleClickAdapter|addMouseMoveListener|addMouseWheelListener|addMouseTrackListener	org.eclipse.swt.events.KeyListener/MouseListener	INPUT_EVENT	input class highest priority in the Synchronizer (rule 28)
+T13	addListener\(SWT\.|Listener [a-z][A-Za-z0-9_]* = 	org.eclipse.swt.widgets.Listener	SWT_TYPED_EVENT	typed SWT event; PartVisible/PartHidden join here (rule 25)
+T14	addHelpListener|HelpListener	org.eclipse.swt.events.HelpListener	HELP	behaviours: popups on header/body/footer (rule 29)
+T15	addFocusListener|focusGainedAdapter|focusLostAdapter	org.eclipse.swt.events.FocusListener	FOCUS	behaviours (rule 29)
+T16	addMenuDetectListener|addMenuListener|menuShownAdapter|menuHiddenAdapter|addTraverseListener	org.eclipse.swt.events.MenuListener	MENU_TRAVERSE	behaviours (rule 29)
+T17	computeIfAbsent\(|computeIfPresent\(|\.merge\(	java.util.Map	MULTIMAP_TO_LANE	one model, M3 collections instead of nested maps (feedback-one-model-delta-processing)
+T18	\.forEach\(|\.accept\(|\.map\(|\.filter\(|\.compute\(	java.lang.Iterable/java.util.stream	ITERATION_TO_LANE	DOOP lanes: bulk passes over arrays/bitsets
+T19	\.sort\(|Comparator\.|comparing\(	java.util.Comparator	SORT_LANE	sort/filter proxy model (M3ProxyModel)
+T20	addPartListener|IPartListener|partVisible|partHidden|IPartListener2	org.eclipse.ui.IPartListener2	PART_VISIBILITY	built on SWT.PartVisible/PartHidden (rule 25)
+T21	addCheckStateListener|ICheckStateListener|checkStateChanged	org.eclipse.jface.viewers.ICheckStateListener	CHECK_STATE_LANE	state bits lane (rule 26)
+T22	addTreeListener|ITreeViewerListener|treeExpanded|treeCollapsed|addExpandListener	org.eclipse.jface.viewers.ITreeViewerListener	EXPAND_STATE_LANE	expanded bits lane, expand/collapse to level (rule 29)
+T23	addFilter\(|setFilters\(|ViewerFilter|PatternFilter	org.eclipse.jface.viewers.ViewerFilter	FILTER_LANE	filter lanes, text filter as lane (Problems view reference)
+T24	setLabelProvider|decorate\(|createTextImageProvider|createVisibleListener|addLabelProviderListener|ILabelProviderListener|labelProviderChanged	org.eclipse.jface.viewers.ILabelProviderListener	LABEL_DELTA	label ids interned, update rows in window only
+T25	addDragDetectListener|addDragListener|addDropListener|DragSource|DropTarget	org.eclipse.swt.dnd.DragSourceListener	DND	behaviours: bulk selection mover (rule 29)
+T26	addExecutionListener|IExecutionListener|addHandlerListener|IHandlerListener|addCommandListener	org.eclipse.core.commands.IExecutionListener	COMMAND_STATE	enablement lane (behaviours enablers/disablers)
+T27	addDebugEventListener|IDebugEventSetListener|addLaunchListener|ILaunchesListener	org.eclipse.debug.core.IDebugEventSetListener	DEBUG_EVENT_ADAPTER	debug-events change-source adapter (rule 27)
+T28	addDocumentUndoListener|IDocumentUndoListener|addDocumentListener|IDocumentListener|addTextListener|ITextListener|addTextInputListener|addDocumentPartitioningListener	org.eclipse.jface.text.IDocumentListener	DOCUMENT_DELTA	editor and text API enhance: document deltas end to end
+T29	addLineStyleListener|addLineBackgroundListener|LineStyleListener|StyledText	org.eclipse.swt.custom.StyledText	STYLEDTEXT_LANE	editor and text API enhance: StyledText full API under the viewport
+T30	ContentProposalAdapter|IContentProposalProvider|ICompletionProposal|IContentAssist	org.eclipse.jface.fieldassist.ContentProposalAdapter	AUTOCOMPLETE	behaviours: autocomplete, free-floating search (rule 29)
+T31	addElementChangedListener|IElementChangedListener|IJavaElementDelta	org.eclipse.jdt.core.IElementChangedListener	JAVA_ELEMENT_DELTA_ADAPTER	java-elements change-source adapter (rule 27)
+T32	addPageChangedListener|IPageChangedListener|addPageChangingListener	org.eclipse.jface.dialogs.IPageChangedListener	WIZARD_PAGE	wizard/preference tree dialogs (rule 29)
+T33	addRegistryChangeListener|IRegistryChangeListener|IRegistryEventListener	org.eclipse.core.runtime.IRegistryChangeListener	EXTENSION_REGISTRY_DELTA	extension-registry change-source adapter (rule 27)
+T34	addViewportListener|IViewportListener	org.eclipse.jface.text.IViewportListener	VIEWPORT_LISTENER	ViewportListener at the widget, the text viewer forwards (rule 25)
+T35	addValueChangeListener|IValueChangeListener|addChangeListener|IChangeListener|addListChangeListener|addSetChangeListener	org.eclipse.core.databinding.observable.IChangeListener	DATABINDING_OBSERVABLE	observables change-source adapter, data binding on M3 lanes
+T36	addActivityListener|addCategoryListener|IActivityListener|ICategoryListener|IActivityManagerListener	org.eclipse.ui.activities.IActivityListener	ACTIVITY_STATE	enablement lane (behaviours enablers/disablers)
+T37	addCacheListener|addContentChangeListener|IContentChangeListener|addCompareInputChangeListener|ICompareInputChangeListener	org.eclipse.compare.IContentChangeListener	COMPARE_DELTA	compare/diff viewer deltas (behaviours: diff viewer)
+T38	addScopeChangeListener|ISynchronizeScopeChangeListener|ISyncInfoSetChangeListener|ISubscriberChangeListener	org.eclipse.team.core.subscribers.ISubscriberChangeListener	TEAM_SYNC_ADAPTER	team-sync change-source adapter (rule 27)
+T39	whenComplete|thenAccept|thenApply|CompletableFuture|\.subscribe\(	java.util.concurrent.CompletableFuture	ASYNC_FUTURE	model-thread completion feeds one UI patch (rule 28)
+T40	setURLModifier|setLog\(|setDetailsAreaProvider	callback setters	CALLBACK_SETTER	setter-injected callback; JFace forwards
