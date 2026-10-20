@@ -48,4 +48,4 @@ Donor decisions: FOSS_REUSE_DECISION.tsv. Census of the Java 22+ lines before th
 
 ## Machine Oriented Programming (MOP)
 
-This recipe follows the self-improving recipe invariant of MOP (Hitesh Soliwal, Synexia; MACHINE_ORIENTED_PROGRAMMING.md): every correction an LLM or coding agent makes to the recipe is recorded in RECIPE_CORRECTIONS.tsv with its cause, test and lesson, and agents read it before running or changing the recipe. Pass three (PASS3_MARKS.tsv, jdk21_pass3.sh) matches every changed site against TEMPLATES.tsv and CODE_MAPPING.tsv and names the enhancement target it feeds.
+This recipe follows the self-improving recipe invariant of MOP (Hitesh Soliwal, Synexia; canonical text: M3jdk21 m3/mop/SELF_IMPROVING_RECIPES.md, PR #1592): every correction an LLM or coding agent makes to the recipe is recorded in RECIPE_MEMORY.tsv (utc, recipe, trigger, observed, correction, corrected_by, guard, lesson), and agents read it before running or changing the recipe. Pass three (PASS3_MARKS.tsv, jdk21_pass3.sh) matches every changed site against TEMPLATES.tsv and CODE_MAPPING.tsv and names the enhancement target it feeds.
