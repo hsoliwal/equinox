@@ -33,6 +33,7 @@ while read -r r; do find "$r" -name '*.java' -type f; done < "$ROOTS" | sed 's|^
 LOG=$D/gate/$R.$TAG.log
 "$JAVAC" -J-Xmx6g --release "$REL" -encoding UTF-8 -proc:none -nowarn -Xmaxerrs 1000000 -Xmaxwarns 0 -implicit:none \
 	-XDshould-stop.ifError=FLOW -XDshould-stop.ifNoError=FLOW @"$D/gate/$R.args" @"$SRC" > "$LOG" 2>&1 || true
-grep -a -E '^[A-Za-z]:[^:]*\.java:[0-9]+: error: ' "$LOG" | sed "s|^$W/||" \
+# javac prints native paths (S:\...): forward slashes, worktree prefix dropped, so rows are repo-relative
+grep -a -E '^[A-Za-z]:[^:]*\.java:[0-9]+: error: ' "$LOG" | tr '\\' '/' | sed "s|^$W/||" \
 	| sed -E 's/^(.*\.java):([0-9]+): error: (.*)$/\1\t\2\t\3/' | tr -d '\r' | sort -u > "$D/gate/$R.$TAG.tsv"
 echo "$R --release $REL [$TAG]: $(wc -l < "$SRC") files, $(wc -l < "$ROOTS") roots, $(wc -l < "$D/gate/$R.$TAG.tsv") errors"

@@ -38,7 +38,8 @@ function idch(c) { return c ~ /[A-Za-z0-9_$]/ || c > "\177" }
 			}
 			continue
 		}
-		if (c == "_" && !idch(substr(line, i - 1, 1)) && (i == n || !idch(substr(line, i + 1, 1)))) {
+		# gawk's substr(s, 0, 1) is the first character, not "": column 1 has no predecessor
+		if (c == "_" && (i == 1 || !idch(substr(line, i - 1, 1))) && (i == n || !idch(substr(line, i + 1, 1)))) {
 			k++; out = out (k == 1 ? "unused" : "unused" k); i++
 			# `var _= x` was written without a space before `=`; keep the spacing the author chose
 			continue
