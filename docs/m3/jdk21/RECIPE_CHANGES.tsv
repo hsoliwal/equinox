@@ -1,0 +1,4 @@
+step	path	changed_lines
+manifest	bundles/org.eclipse.equinox.security.linux/META-INF/MANIFEST.MF	1
+classpath	bundles/org.eclipse.equinox.security.linux/.classpath	1
+prefs	bundles/org.eclipse.equinox.security.linux/.settings/org.eclipse.jdt.core.prefs	3

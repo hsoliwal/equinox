@@ -1,0 +1,31 @@
+template	regex	interface_or_api	enhance_target	programme_rule
+M01	new HashMap<|new HashMap\(	java.util.HashMap	M3_HASH_LANES	M3 collections (M3jdk21 m3/collections): primitive keys/values, interned ids, no entry objects
+M02	new ArrayList<|new ArrayList\(	java.util.ArrayList	M3_ARRAY_LANES	DOOP: dynamic arrays (M3LongArrayList, IntArrayList), objects only on API request
+M03	new HashSet<|new HashSet\(	java.util.HashSet	M3_SET_LANES	M3IntHashSet / bitset lanes
+M04	new LinkedHashMap<|new LinkedHashSet<|new LinkedHashMap\(|new LinkedHashSet\(	java.util.LinkedHashMap	M3_ORDERED_LANES	ordered lanes (PackedLongOrderedSet donor)
+M05	new TreeMap<|new TreeSet<|new TreeMap\(|new TreeSet\(	java.util.TreeMap	M3_SORTED_LANES	sorted lanes (PackedLongSortedMap donor)
+M06	new IdentityHashMap<|new WeakHashMap<|new IdentityHashMap\(|new WeakHashMap\(	java.util.IdentityHashMap	M3_IDENTITY_WEAK_LANES	DenseIdentityHashMap, PackedWeakMap donors
+M07	EnumSet\.|new EnumMap<|EnumMap\(	java.util.EnumSet	M3_ENUM_BITS	EnumPrimitiveMap / LongBitSet donors
+M08	new LinkedList<|new ArrayDeque<|new LinkedList\(|new ArrayDeque\(	java.util.ArrayDeque	M3_DEQUE_LANES	M3LongArrayDeque
+M09	new PriorityQueue<|new PriorityQueue\(	java.util.PriorityQueue	M3_HEAP_LANES	M3LongPriorityQueue / IntMinHeap
+M10	(Map|List|Set|Collection)<(Integer|Long|Short|Byte|Character|Boolean)[,>]|Map<[A-Za-z]+, ?(Integer|Long)>	boxed primitives in collections	M3_PRIMITIVE_LANES	no boxing: primitive lanes
+M11	String\.format\(|MessageFormat\.format\(|NLS\.bind\(	java.lang.String#format	FORMAT_PRECOMPUTE	compile-time precompute of format constants (project-compiletime-precompute)
+M12	Pattern\.compile\(|\.matches\("|\.replaceAll\("|\.split\("	java.util.regex.Pattern	REGEX_PRECOMPUTE	constant Pattern.compile first leaf; regex-cursor over M3String
+M13	\.intern\(\)	java.lang.String#intern	TOKEN_INTERNER	TIL: bounded TokenInterner / M3String ids
+M14	new StringBuilder|new StringBuffer	java.lang.StringBuilder	M3STRING_COMPOSITE	String = composite of M3Strings (tuple DAG)
+M15	\.stream\(\)|Stream\.of\(|Collectors\.	java.util.stream	BULK_LANE_PASS	fused scans over lanes (precompute A8)
+M16	Collections\.sort\(|Arrays\.sort\(	java.util.Collections#sort	SORT_LANE	sort lanes / M3ProxyModel
+M17	\.toLowerCase\(|\.toUpperCase\(|equalsIgnoreCase\(	java.lang.String case folding	CASE_FOLD_FACTS	caseFoldHash facts with a consumer
+M18	Integer\.valueOf\(|Long\.valueOf\(|\.intValue\(\)|\.longValue\(\)	boxing/unboxing	M3_PRIMITIVE_LANES	no boxing on hot paths (HP-LAW)
+M19	new Image\(|new Font\(|new Color\(|new Cursor\(|createImage\(	org.eclipse.swt.graphics.Resource	RESOURCE_RESIDENCY	M3 object residency law; SVG-skinned controls
+M20	new TableItem\(|new TreeItem\(|\.getItems\(\)|\.getItem\(	org.eclipse.swt.widgets.TableItem/TreeItem	ITEM_FACADE_TO_MODEL	public model API: items are lazy facades (rule 26)
+M21	\.refresh\(\)|\.refresh\(true\)|\.refresh\(false\)|\.setInput\(|setRedraw\(	org.eclipse.jface.viewers.StructuredViewer#refresh	FULL_REBUILD_TO_DELTA	delta-only views (rule 24); Markers view full rebuild is the anti-pattern
+M22	getChildren\(Object|getElements\(Object|hasChildren\(Object	org.eclipse.jface.viewers.ITreeContentProvider	CONTENT_PROVIDER_TO_WINDOW	lane windows: materialize only the visible rows
+M23	new ConcurrentHashMap|synchronized \(|ReentrantLock|CopyOnWriteArrayList	java.util.concurrent	THREAD_OWNERSHIP	model-thread ownership, immutable patches (rule 28)
+M24	Files\.walk\(|Files\.list\(|\.listFiles\(|Files\.newDirectoryStream\(	java.nio.file.Files	M3FILE_STREAMS	M3File/M3Files/M3FileStream (M3FILE_STREAMS brief)
+M25	new ZipFile\(|ZipInputStream|new JarFile\(|JarInputStream	java.util.zip.ZipFile	M3FILE_ARCHIVE_STREAM	archive as an M3File stream with filter and transformer
+M26	new SashForm\(|SashForm|new Sash\(	org.eclipse.swt.custom.SashForm	SPLIT_PANEL	split panels behaviour (rule 29)
+M27	GridLayout|GridData|FormLayout|FormData	org.eclipse.swt.layout	LAYOUT_DELTA	resize/layout as viewport delta (rule 24)
+M28	\.getText\(\)|\.setText\(	org.eclipse.swt.widgets text API	TEXT_API_LANE	label ids interned; editor and text API enhance
+M29	new Label\(|new Text\(|new Combo\(|new Button\(|new Table\(|new Tree\(|new List\(	org.eclipse.swt.widgets constructors	WIDGET_FULL_API	widgets own all the API; JFace forwards (rule 25)
+M30	new TableViewer\(|new TreeViewer\(|new ListViewer\(|new CheckboxTreeViewer\(|new CheckboxTableViewer\(|new ComboViewer\(	org.eclipse.jface.viewers	JFACE_FORWARD	JFace viewers forward to the widget model API, no second model
