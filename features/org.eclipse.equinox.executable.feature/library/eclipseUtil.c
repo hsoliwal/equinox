@@ -31,8 +31,6 @@
 #include <strings.h>
 #endif
 
-#include "eclipse-memcpy.h"
-
 int checkProvidedVMType( _TCHAR* vm ) 
 {
 	_TCHAR* ch = NULL;
@@ -73,7 +71,7 @@ _TCHAR * checkPathList( _TCHAR* pathList, _TCHAR* programDir, int reverseOrder) 
 	_TCHAR * c1, *c2;
 	_TCHAR * checked, *result;
 	size_t checkedLength = 0, resultLength = 0;
-	size_t bufferLength = _tcslen(pathList);
+	size_t bufferLength = _tcslen(pathList) + 1;
 	
 	result = malloc(bufferLength * sizeof(_TCHAR));
 	c1 = pathList;
