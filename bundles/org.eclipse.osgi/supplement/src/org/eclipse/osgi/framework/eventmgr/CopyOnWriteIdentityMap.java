@@ -18,12 +18,14 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * A copy-on-write identity map. Write operations result in copying the underlying data so that
@@ -37,16 +39,15 @@ import java.util.Set;
  */
 public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	/**
-	 * The empty array singleton instance.
+	 * The empty immutable generation singleton.
 	 */
-	@SuppressWarnings("rawtypes")
-	private static final Entry[] emptyArray = new Entry[0];
+	private static final Table<?, ?> emptyTable = new Table<>(new Object[0], new Object[0]);
 
 	/**
-	 * The array of entries. This field is volatile so it can be
-	 * accessed from unsynchronized reader methods.
+	 * Keys and values are published together as one immutable generation. Readers
+	 * capture this volatile reference once and never observe partially copied lanes.
 	 */
-	private volatile Entry<K, V>[] entries;
+	private volatile Table<K, V> entries;
 
 	/**
 	 * Creates an empty map.
@@ -62,7 +63,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	 */
 	public CopyOnWriteIdentityMap(CopyOnWriteIdentityMap<? extends K, ? extends V> source) {
 		@SuppressWarnings("unchecked")
-		Entry<K, V>[] toCopy = (Entry<K, V>[]) source.entries();
+		Table<K, V> toCopy = (Table<K, V>) source.entries();
 		this.entries = toCopy;
 	}
 
@@ -84,29 +85,26 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	public synchronized V put(K key, V value) {
 		requireNonNull(key);
 
-		int size = entries.length;
+		Table<K, V> current = entries;
+		int size = current.size();
 		for (int i = 0; i < size; i++) {
-			if (entries[i].key == key) {
-				V v = entries[i].value;
+			if (current.keys[i] == key) {
+				V v = current.value(i);
 				if (v == value) {
 					return v;
 				}
-				@SuppressWarnings("unchecked")
-				Entry<K, V>[] newEntries = new Entry[size];
-				System.arraycopy(entries, 0, newEntries, 0, size);
-				newEntries[i] = new Entry<>(key, value);
-				entries = newEntries;
+				Object[] newValues = current.values.clone();
+				newValues[i] = value;
+				entries = new Table<>(current.keys, newValues);
 				return v;
 			}
 		}
 
-		@SuppressWarnings("unchecked")
-		Entry<K, V>[] newEntries = new Entry[size + 1];
-		if (size > 0) {
-			System.arraycopy(entries, 0, newEntries, 0, size);
-		}
-		newEntries[size] = new Entry<>(key, value);
-		entries = newEntries;
+		Object[] newKeys = Arrays.copyOf(current.keys, size + 1);
+		Object[] newValues = Arrays.copyOf(current.values, size + 1);
+		newKeys[size] = key;
+		newValues[size] = value;
+		entries = new Table<>(newKeys, newValues);
 		return null;
 	}
 
@@ -126,14 +124,18 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 			return;
 		}
 
-		@SuppressWarnings("unchecked")
-		Entry<K, V>[] toCopy = new Entry[sourceSize];
+		Object[] keys = new Object[sourceSize];
+		Object[] values = new Object[sourceSize];
 		Iterator<? extends Map.Entry<? extends K, ? extends V>> iter = source.entrySet().iterator();
 		for (int i = 0; i < sourceSize; i++) {
 			Map.Entry<? extends K, ? extends V> mapEntry = iter.next();
-			toCopy[i] = new Entry<>(mapEntry.getKey(), mapEntry.getValue());
+			K key = mapEntry.getKey();
+			V value = mapEntry.getValue();
+			// Both getters precede validation, as in the immutable entry constructor.
+			keys[i] = requireNonNull(key);
+			values[i] = value;
 		}
-		putAll(toCopy);
+		putAll(new Table<K, V>(keys, values));
 	}
 
 	/**
@@ -147,45 +149,43 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 		if (sourceSize == 0) {
 			return;
 		}
-		@SuppressWarnings("unchecked")
-		Entry<K, V>[] toCopy = new Entry[sourceSize];
+		Object[] newKeys = new Object[sourceSize];
+		Object[] newValues = new Object[sourceSize];
 		for (int i = 0; i < sourceSize; i++) {
-			toCopy[i] = new Entry<>(keys[i], null);
+			newKeys[i] = requireNonNull(keys[i]);
 		}
-		putAll(toCopy);
+		putAll(new Table<K, V>(newKeys, newValues));
 	}
 
 	/**
 	 * Add all the entries to this map.
 	 *
-	 * @param toCopy Array of entries to add to this map.
+	 * @param toCopy Immutable key/value generation to add to this map.
 	 */
-	private synchronized void putAll(Entry<? extends K, ? extends V>[] toCopy) {
-		int sourceSize = toCopy.length;
-		int size = entries.length;
-		@SuppressWarnings("unchecked")
-		Entry<K, V>[] newEntries = new Entry[size + sourceSize];
-		System.arraycopy(entries, 0, newEntries, 0, size);
+	private synchronized void putAll(Table<? extends K, ? extends V> toCopy) {
+		int sourceSize = toCopy.size();
+		Table<K, V> current = entries;
+		int size = current.size();
+		Object[] newKeys = Arrays.copyOf(current.keys, size + sourceSize);
+		Object[] newValues = Arrays.copyOf(current.values, size + sourceSize);
 		copy: for (int n = 0; n < sourceSize; n++) {
-			@SuppressWarnings("unchecked")
-			Entry<K, V> copy = (Entry<K, V>) toCopy[n];
+			Object key = toCopy.keys[n];
+			Object value = toCopy.values[n];
 			for (int i = 0; i < size; i++) {
-				if (newEntries[i].key == copy.key) {
-					newEntries[i] = copy;
+				if (newKeys[i] == key) {
+					newValues[i] = value;
 					continue copy;
 				}
 			}
-			newEntries[size] = copy;
+			newKeys[size] = key;
+			newValues[size] = value;
 			size++;
 		}
-		if (size == newEntries.length) {
-			entries = newEntries;
-			return;
+		if (size != newKeys.length) {
+			newKeys = Arrays.copyOf(newKeys, size);
+			newValues = Arrays.copyOf(newValues, size);
 		}
-		@SuppressWarnings("unchecked")
-		Entry<K, V>[] e = new Entry[size];
-		System.arraycopy(newEntries, 0, e, 0, size);
-		entries = e;
+		entries = new Table<>(newKeys, newValues);
 	}
 
 	/**
@@ -201,10 +201,10 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	public synchronized V remove(Object key) {
 		requireNonNull(key);
 
-		int size = entries.length;
+		int size = entries.size();
 		for (int i = 0; i < size; i++) {
-			if (entries[i].key == key) {
-				V v = entries[i].value;
+			if (entries.keys[i] == key) {
+				V v = entries.value(i);
 				entries = removeEntry(entries, i);
 				return v;
 			}
@@ -213,23 +213,25 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	}
 
 	/**
-	 * Static method used to return an Entry array with the ith entry removed.
+	 * Static method used to return a generation with the ith mapping removed.
 	 */
-	static <K, V> Entry<K, V>[] removeEntry(final Entry<K, V>[] entries, final int i) {
-		int size = entries.length;
+	static <K, V> Table<K, V> removeEntry(final Table<K, V> entries, final int i) {
+		int size = entries.size();
 		if (size == 1) {
 			return empty();
 		}
-		@SuppressWarnings("unchecked")
-		Entry<K, V>[] newEntries = new Entry[size - 1];
+		Object[] newKeys = new Object[size - 1];
+		Object[] newValues = new Object[size - 1];
 		if (i > 0) {
-			System.arraycopy(entries, 0, newEntries, 0, i);
+			System.arraycopy(entries.keys, 0, newKeys, 0, i);
+			System.arraycopy(entries.values, 0, newValues, 0, i);
 		}
 		int next = size - 1 - i;
 		if (next > 0) {
-			System.arraycopy(entries, i + 1, newEntries, i, next);
+			System.arraycopy(entries.keys, i + 1, newKeys, i, next);
+			System.arraycopy(entries.values, i + 1, newValues, i, next);
 		}
-		return newEntries;
+		return new Table<>(newKeys, newValues);
 	}
 
 	/**
@@ -244,20 +246,19 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 	/**
 	 * Accessor for methods which only read the entries.
-	 * @return The array of entries. Callers to this method MUST NOT
-	 * modify the returned array.
+	 * @return The immutable generation. Callers MUST NOT modify its arrays.
 	 */
-	private Entry<K, V>[] entries() {
+	private Table<K, V> entries() {
 		return entries;
 	}
 
 	/**
-	 * Return the static empty array generically type safe.
-	 * @return The empty array of entries.
+	 * Return the static empty generation generically type safe.
+	 * @return The empty generation.
 	 */
 	@SuppressWarnings("unchecked")
-	static <K, V> Entry<K, V>[] empty() {
-		return emptyArray;
+	static <K, V> Table<K, V> empty() {
+		return (Table<K, V>) emptyTable;
 	}
 
 	/**
@@ -277,7 +278,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public int size() {
-		return entries().length;
+		return entries().size();
 	}
 
 	/**
@@ -292,9 +293,10 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	public V get(Object key) {
 		requireNonNull(key);
 
-		for (Entry<K, V> entry : entries()) {
-			if (entry.key == key) {
-				return entry.value;
+		Table<K, V> current = entries();
+		for (int i = 0; i < current.size(); i++) {
+			if (current.keys[i] == key) {
+				return current.value(i);
 			}
 		}
 		return null;
@@ -312,8 +314,8 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	public boolean containsKey(Object key) {
 		requireNonNull(key);
 
-		for (Entry<K, V> entry : entries()) {
-			if (entry.key == key) {
+		for (Object currentKey : entries().keys) {
+			if (currentKey == key) {
 				return true;
 			}
 		}
@@ -329,8 +331,8 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public boolean containsValue(Object value) {
-		for (Entry<K, V> entry : entries()) {
-			if (entry.value == value) {
+		for (Object currentValue : entries().values) {
+			if (currentValue == value) {
 				return true;
 			}
 		}
@@ -372,7 +374,63 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	}
 
 	/**
-	 * This class represents the entry in this identity map.
+	 * Traverse one immutable generation without allocating public entry projections.
+	 */
+	@Override
+	public void forEach(BiConsumer<? super K, ? super V> action) {
+		requireNonNull(action);
+		if (getClass() != CopyOnWriteIdentityMap.class) {
+			// A subclass may have overridden the entry-set traversal contract.
+			Map.super.forEach(action);
+			return;
+		}
+		Table<K, V> current = entries();
+		for (int i = 0; i < current.size(); i++) {
+			action.accept(current.key(i), current.value(i));
+		}
+	}
+
+	/**
+	 * One immutable copy-on-write generation. Arrays are private owner state and
+	 * are never changed after publication; replacing values can share the key lane.
+	 */
+	static private final class Table<K, V> {
+		final Object[] keys;
+		final Object[] values;
+
+		Table(Object[] keys, Object[] values) {
+			this.keys = keys;
+			this.values = values;
+		}
+
+		int size() {
+			return keys.length;
+		}
+
+		@SuppressWarnings("unchecked")
+		K key(int index) {
+			return (K) keys[index];
+		}
+
+		@SuppressWarnings("unchecked")
+		V value(int index) {
+			return (V) values[index];
+		}
+
+		boolean entryEquals(int index, Object other) {
+			// Capture both references before invoking the external entry's getters.
+			Object key = keys[index];
+			Object value = values[index];
+			if (!(other instanceof Map.Entry<?, ?>)) {
+				return false;
+			}
+			Map.Entry<?, ?> entry = (Map.Entry<?, ?>) other;
+			return key == entry.getKey() && value == entry.getValue();
+		}
+	}
+
+	/**
+	 * This class represents a caller-owned projection of an entry in this identity map.
 	 * Entry is immutable.
 	 */
 	static private final class Entry<K, V> implements Map.Entry<K, V> {
@@ -445,13 +503,13 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	 * views only allow removal not addition.
 	 */
 	static private final class Snapshot<K, V> {
-		volatile Entry<K, V>[] entries;
+		volatile Table<K, V> entries;
 
-		Snapshot(Entry<K, V>[] e) {
+		Snapshot(Table<K, V> e) {
 			entries = e;
 		}
 
-		Entry<K, V>[] entries() {
+		Table<K, V> entries() {
 			return entries;
 		}
 
@@ -490,7 +548,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 			@Override
 			public int size() {
-				return entries().length;
+				return entries().size();
 			}
 
 			@Override
@@ -498,9 +556,9 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				requireNonNull(o);
 
 				synchronized (Snapshot.this) {
-					int size = entries.length;
+					int size = entries.size();
 					for (int i = 0; i < size; i++) {
-						if (entries[i].equals(o)) {
+						if (entries.entryEquals(i, o)) {
 							removeEntry(i);
 							return true;
 						}
@@ -525,7 +583,9 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 			@Override
 			public Map.Entry<K, V> next() {
-				return nextEntry();
+				Table<K, V> current = entries();
+				int index = nextIndex(current);
+				return new Entry<>(current.key(index), current.value(index));
 			}
 		}
 
@@ -544,7 +604,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 			@Override
 			public int size() {
-				return entries().length;
+				return entries().size();
 			}
 
 			@Override
@@ -552,9 +612,9 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				requireNonNull(o);
 
 				synchronized (Snapshot.this) {
-					int size = entries.length;
+					int size = entries.size();
 					for (int i = 0; i < size; i++) {
-						if (entries[i].key == o) {
+						if (entries.keys[i] == o) {
 							removeEntry(i);
 							return true;
 						}
@@ -579,7 +639,8 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 			@Override
 			public K next() {
-				return nextEntry().key;
+				Table<K, V> current = entries();
+				return current.key(nextIndex(current));
 			}
 		}
 
@@ -598,7 +659,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 			@Override
 			public int size() {
-				return entries().length;
+				return entries().size();
 			}
 
 			@Override
@@ -606,9 +667,9 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				requireNonNull(o);
 
 				synchronized (Snapshot.this) {
-					int size = entries.length;
+					int size = entries.size();
 					for (int i = 0; i < size; i++) {
-						if (entries[i].value == o) {
+						if (entries.values[i] == o) {
 							removeEntry(i);
 							return true;
 						}
@@ -633,7 +694,8 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 			@Override
 			public V next() {
-				return nextEntry().value;
+				Table<K, V> current = entries();
+				return current.value(nextIndex(current));
 			}
 		}
 
@@ -645,7 +707,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 			private int cursor;
 
 			SnapshotIterator() {
-				length = entries().length;
+				length = entries().size();
 				cursor = 0;
 			}
 
@@ -654,20 +716,19 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				return cursor < length;
 			}
 
-			protected final Entry<K, V> nextEntry() {
-				Entry<K, V>[] e = entries();
-				if (length != e.length) {
+			protected final int nextIndex(Table<K, V> current) {
+				if (length != current.size()) {
 					throw new ConcurrentModificationException();
 				}
 				if (cursor == length) {
 					throw new NoSuchElementException();
 				}
-				return e[cursor++];
+				return cursor++;
 			}
 
 			@Override
 			public final void remove() {
-				if (length != entries().length) {
+				if (length != entries().size()) {
 					throw new ConcurrentModificationException();
 				}
 				if (cursor == 0) {
@@ -675,7 +736,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				}
 				cursor--;
 				removeEntry(cursor);
-				length = entries().length;
+				length = entries().size();
 			}
 		}
 	}
