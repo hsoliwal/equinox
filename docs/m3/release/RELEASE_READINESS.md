@@ -6,8 +6,9 @@ Tools and raw evidence: [`docs/m3/jdk21/release-20261109`](../jdk21/release-2026
 
 | # | Gate | Verdict | Evidence |
 | --- | --- | --- | --- |
-| G1 | No Java 22+ requirement on master: BREE above JavaSE-21 (0), build/IDE pins above 21 (1), unnamed `_` (0), `import module` (0) | FAIL on master (fixed by RECIPE_CHANGES.tsv in this PR: 1 files) | CENSUS.tsv |
+| G1 | No Java 22+ requirement on master: BREE above JavaSE-21 (0), build/IDE pins above 21 (1), unnamed `_` (0), `import module` (0) | FAIL on master (fixed by RECIPE_CHANGES.tsv in this PR: 1 files) | CENSUS.tsv (code view; hits inside strings, text blocks and comments: CENSUS_MASKED.tsv) |
 | G2 | Java-21 compile gate: JDK 25 javac `--release 21` minus `--release 25` over 2 bundles (17 files, 2 roots); 0 baseline rows cancel | FAIL on master (residue 175, GATE_RESIDUE_MASTER.tsv); PASS with this PR (residue 0) | GATE_RESIDUE.tsv, GATE_SUMMARY.tsv |
+| G2b | Parse gate: every tracked Java source (2074 files, test bundles included, test-input folders excluded), JDK 25 javac `--release 21` stopped after parsing | PASS | PARSE_GATE.tsv |
 | G3 | Recipe fixed point (`apply_jdk21.sh` + `apply_jdk21_pins.sh` change nothing on master) | FIXED in this PR (1 files) | RECIPE_CHANGES.tsv |
 | G4 | Metadata consistent: Tycho bundle/feature versions match their pom, no EE above 21 in a Java-21 bundle | PASS | META.tsv |
 | G5 | Full Tycho build of this repository on JDK 21 | PENDING | not run locally (disk and time budget); the javac gate G2 covers language level and API |
