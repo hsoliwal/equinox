@@ -24,6 +24,13 @@ c() { awk -F'\t' -v k="$1" '$1==k' "$G.census.tsv" | wc -l | tr -d ' '; }
 files=$(n "$G.jdk21.sources"); roots=$(n "$G.jdk21.roots"); b25=$(n "$G.base25.tsv"); j21=$(n "$G.jdk21.tsv")
 res=$(n "$G.residue.tsv"); resm=$(if [ -f "$G.residue.master.tsv" ]; then n "$G.residue.master.tsv"; else echo "$res"; fi); rec=$(n "$G.recipe.tsv"); meta=$(n "$G.meta.tsv"); bun=$(n "$G.bundles")
 pf=$(n "$G.parse.sources"); pe=$(n "$G.parse.tsv"); pem=$(if [ -f "$G.parse.master.tsv" ]; then n "$G.parse.master.tsv"; else echo "$pe"; fi); ex=$(n "$G.census.exempt.tsv")
+BR=F:/m3-scratch/rel21/build/$R.result.tsv; g5="PENDING"; g5e="not run yet"
+if [ -f "$BR" ]; then IFS=$'	' read -r _r st rc sec mods ok bad er f0 f1 < <(sed -n 2p "$BR")
+	if [ "$st" = "BUILD SUCCESS" ]; then g5="PASS"; elif [ "$st" = HOLD ]; then g5="HOLD"; else g5="FAIL"; fi
+	g5e="$st in $sec s, modules $ok/$mods ok, $bad failed, $er [ERROR] rows (BUILD_G5.tsv, BUILD_G5_ERRORS.tsv, BUILD_G5.log.gz)"
+	cp "$BR" "$W/$E/BUILD_G5.tsv"; cp "F:/m3-scratch/rel21/build/$R.errors.tsv" "$W/$E/BUILD_G5_ERRORS.tsv" 2>/dev/null || true
+	cp "F:/m3-scratch/rel21/build/$R.log.gz" "$W/$E/BUILD_G5.log.gz" 2>/dev/null || true
+fi
 bree=$(c bree); pin=$(c pin); un=$(( $(c unnamed_lambda) + $(c unnamed_decl) + $(c unnamed_pattern) )); im=$(c import_module)
 printf 'metric\tvalue\nmaster\t%s\nupstream_master\t%s\ngated_bundles\t%s\nfiles\t%s\nroots\t%s\nbase25_errors\t%s\njdk21_errors\t%s\nresidue\t%s\nrecipe_files_changed\t%s\nmeta_rows\t%s\ncensus_bree\t%s\ncensus_pins\t%s\ncensus_unnamed\t%s\ncensus_import_module\t%s\n' \
 	"$MSHA" "$(git -C "$W" rev-parse upstream/master)" "$bun" "$files" "$roots" "$b25" "$j21" "$res" "$rec" "$meta" "$bree" "$pin" "$un" "$im" > "$W/$E/GATE_SUMMARY.tsv"
@@ -45,7 +52,7 @@ Tools and raw evidence: [\`$E\`](../jdk21/release-20261109/). Every gate ran loc
 | G2b | Parse gate: every tracked Java source ($pf files, test bundles included, test-input folders excluded), JDK 25 javac \`--release 21\` stopped after parsing | $(if [ "$pem" = "$pe" ]; then v "$pe" "FAIL: $pe rows"; else echo "FAIL on master ($pem rows, PARSE_GATE_MASTER.tsv); $(v "$pe" FAIL) with this PR"; fi) | PARSE_GATE.tsv |
 | G3 | Recipe fixed point (\`apply_jdk21.sh\` + \`apply_jdk21_pins.sh\` change nothing on master) | $(v "$rec" "FIXED in this PR ($rec files)") | RECIPE_CHANGES.tsv |
 | G4 | Metadata consistent: Tycho bundle/feature versions match their pom, no EE above 21 in a Java-21 bundle | $(v "$meta" "FAIL: $meta rows") | META.tsv |
-| G5 | Full Tycho build of this repository on JDK 21 | PENDING | not run locally (disk and time budget); the javac gate G2 covers language level and API |
+| G5 | Full Tycho build of this repository on JDK 21 (\`mvn -B clean verify -DskipTests\`, fork parent + SDK target from the fork aggregator, other components from the upstream 4.42 I-build repository) | $g5 | $g5e |
 | G6 | Eclipse SDK product build and launch on JDK 21 | PENDING | aggregator verdict, eclipse.platform.releng.aggregator docs/m3/release/RELEASE_READINESS.md |
 EOF
 [ -n "$NOTES" ] && [ -f "$NOTES" ] && { echo; cat "$NOTES"; }

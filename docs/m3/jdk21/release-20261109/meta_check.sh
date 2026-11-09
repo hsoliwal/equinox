@@ -10,7 +10,13 @@
 #            whose BREE is JavaSE-21 or lower
 # Usage: meta_check.sh <worktree> > rows.tsv   (kind TAB path TAB expected TAB actual); empty output = PASS
 set -uo pipefail
-W="$1"; export LC_ALL=C
+W="$1"; X="${2:-}"; export LC_ALL=C
+# optional exemption list (glob TAB reason): rows under an exempt glob are not reported
+if [ -n "$X" ] && [ -f "$X" ]; then
+	bash "$0" "$W" | while IFS= read -r row; do p=$(printf '%s' "$row" | cut -f2); keep=1
+		while IFS= read -r line; do g=${line%%$'	'*}; [ -n "$g" ] && [[ $p == $g ]] && keep=0; done < "$X"
+		[ "$keep" = 1 ] && printf '%s
+' "$row"; done; exit 0; fi
 pomver() { # project version of a pom (the first <version> outside <parent>)
 	awk -v BINMODE=3 '{ gsub(/\r/,"") } /<parent>/{p=1} /<\/parent>/{p=0; next} !p && /<version>/ && !done {
 		s=$0; sub(/.*<version>/,"",s); sub(/<\/version>.*/,"",s); print s; done=1 }

@@ -11,7 +11,7 @@ Tools and raw evidence: [`docs/m3/jdk21/release-20261109`](../jdk21/release-2026
 | G2b | Parse gate: every tracked Java source (2074 files, test bundles included, test-input folders excluded), JDK 25 javac `--release 21` stopped after parsing | PASS | PARSE_GATE.tsv |
 | G3 | Recipe fixed point (`apply_jdk21.sh` + `apply_jdk21_pins.sh` change nothing on master) | FIXED in this PR (1 files) | RECIPE_CHANGES.tsv |
 | G4 | Metadata consistent: Tycho bundle/feature versions match their pom, no EE above 21 in a Java-21 bundle | PASS | META.tsv |
-| G5 | Full Tycho build of this repository on JDK 21 | PENDING | not run locally (disk and time budget); the javac gate G2 covers language level and API |
+| G5 | Full Tycho build of this repository on JDK 21 (`mvn -B clean verify -DskipTests`, fork parent + SDK target from the fork aggregator, other components from the upstream 4.42 I-build repository) | PASS | BUILD SUCCESS in 128 s, modules 71/71 ok, 0 failed, 0 [ERROR] rows (BUILD_G5.tsv, BUILD_G5_ERRORS.tsv, BUILD_G5.log.gz) |
 | G6 | Eclipse SDK product build and launch on JDK 21 | PENDING | aggregator verdict, eclipse.platform.releng.aggregator docs/m3/release/RELEASE_READINESS.md |
 
 ## What this PR changes
@@ -38,6 +38,13 @@ Bundle-Version stays 1.2.0.qualifier (never backwards). Gate after the fill: 17 
 1. Approve deleting the three excluded FFM sources (Foreign.java, LibGio.java, LibSecret.java) to make the bundle an exact
    revert of fff3578521; until then they stay in the tree, excluded from Tycho and the IDE build.
 2. Runtime check of the Linux secure-storage provider (libsecret over JNA) on a Linux desktop with JDK 21: not run here.
+
+## G5 (Tycho build on JDK 21.0.9)
+
+| Attempt | Result |
+| --- | --- |
+| 1 | BUILD FAILURE: 69/70 modules ok; org.eclipse.equinox.executable needs the launcher natives of equinox.binaries (`equinox.binaries.loc`, default `../equinox.binaries` next to this repository, as in the aggregator); environment, not code |
+| 2 | BUILD SUCCESS: 71/71 modules in 128 s, with eclipse-equinox/equinox.binaries at the aggregator gitlink 7a1125f75ed9 checked out next to the clone. org.eclipse.equinox.security.linux compiles on JDK 21 with the JNA sources; the three excluded FFM sources stay out of the ECJ build (Tycho `excludes`) |
 
 ## Re-run
 
