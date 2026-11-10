@@ -1,0 +1,15 @@
+metric	value
+master	ad07c8a70da67dda6b09847de4f77781a5d80aed
+upstream_master	a8546aec003527f271ccd5e30c27e1d6a9593b03
+gated_bundles	2
+files	17
+roots	2
+base25_errors	0
+jdk21_errors	0
+residue	0
+recipe_files_changed	1
+meta_rows	0
+census_bree	0
+census_pins	1
+census_unnamed	0
+census_import_module	0
