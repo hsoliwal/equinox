@@ -35,8 +35,12 @@ Bundle-Version stays 1.2.0.qualifier (never backwards). Gate after the fill: 17 
 
 ## HOLD (user action)
 
-1. Approve deleting the three excluded FFM sources (Foreign.java, LibGio.java, LibSecret.java) to make the bundle an exact
-   revert of fff3578521; until then they stay in the tree, excluded from Tycho and the IDE build.
+1. Done 2026-11-10 (user-approved, branch `m3/jdk21-ffm-cleanup-20261110`): Foreign.java, LibGio.java and LibSecret.java
+   deleted and their Tycho `<excludes>` / `.classpath` `excluding=` removed. The bundle's Java sources are now byte for byte
+   those of upstream c8f78f33e5 (parent of the FFM commit fff3578521); only BREE/compliance (21) and the version (1.2.0)
+   differ. The FFM originals stay reachable in history (upstream fff3578521, fork master 7ed67c081fca).
+   Gates on that branch: Java-21 residue 0 (11 files), parse 0 (2071 files), metadata 0 rows, ECJ pre-check 0 rows,
+   Tycho build on JDK 21.0.9 BUILD SUCCESS 71/71 in 361 s.
 2. Runtime check of the Linux secure-storage provider (libsecret over JNA) on a Linux desktop with JDK 21: not run here.
 
 ## G5 (Tycho build on JDK 21.0.9)

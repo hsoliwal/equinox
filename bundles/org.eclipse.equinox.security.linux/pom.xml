@@ -27,18 +27,6 @@
     <plugins>
       <plugin>
         <groupId>org.eclipse.tycho</groupId>
-        <artifactId>tycho-compiler-plugin</artifactId>
-        <configuration>
-          <!-- M3JDK21: java.lang.foreign sources (Java 22+) stay in the tree but out of the Java 21 build -->
-          <excludes>
-              <exclude>org/eclipse/equinox/internal/security/linux/Foreign.java</exclude>
-              <exclude>org/eclipse/equinox/internal/security/linux/LibGio.java</exclude>
-              <exclude>org/eclipse/equinox/internal/security/linux/LibSecret.java</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.eclipse.tycho</groupId>
         <artifactId>target-platform-configuration</artifactId>
         <configuration>
           <dependency-resolution>
