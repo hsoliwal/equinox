@@ -1,9 +1,0 @@
-restore	bundles/org.eclipse.equinox.security.linux/src/org/eclipse/equinox/internal/security/linux/GError.java
-restore	bundles/org.eclipse.equinox.security.linux/src/org/eclipse/equinox/internal/security/linux/GList.java
-restore	bundles/org.eclipse.equinox.security.linux/src/org/eclipse/equinox/internal/security/linux/LinuxPasswordProvider.java
-restore	bundles/org.eclipse.equinox.security.linux/src/org/eclipse/equinox/internal/security/linux/SecretSchema.java
-restore	bundles/org.eclipse.equinox.security.linux/src/org/eclipse/equinox/internal/security/linux/SecretSchemaAttribute.java
-restore	bundles/org.eclipse.equinox.security.linux/src/org/eclipse/equinox/internal/security/linux/SecretSchemaAttributeType.java
-pom	bundles/org.eclipse.equinox.security.linux/pom.xml
-classpath	bundles/org.eclipse.equinox.security.linux/.classpath
-manifest	bundles/org.eclipse.equinox.security.linux/META-INF/MANIFEST.MF
