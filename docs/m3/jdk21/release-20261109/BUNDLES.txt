@@ -1,2 +1,0 @@
-bundles/org.eclipse.equinox.security.linux
-bundles/org.eclipse.equinox.spi.tests
