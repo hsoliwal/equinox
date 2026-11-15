@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: MIT
+# Copy to .github/workflows/chromellm-build-advice.yml in a calling repository.
+# Replace 13ee0db2c9299dbf57e420efcc84a61e6de9ca44 with the reviewed 40-character ChromeLLM commit.
+name: Build with optional Chrome AI
+on:
+  workflow_dispatch:
+    inputs:
+      build-command:
+        description: This repository's reviewed Bash build and test command
+        type: string
+        required: true
+      setup-command:
+        description: Optional reviewed Bash setup command, run in the same shell as the build
+        type: string
+        required: false
+        default: ''
+      ai-enabled:
+        description: Request Chrome advice on a provisioned runner for a default-branch run
+        type: boolean
+        required: false
+        default: false
+      ai-runner-labels:
+        description: Explicit JSON labels for an already provisioned Linux AI runner; required when AI is enabled
+        type: string
+        required: false
+        default: ''
+permissions:
+  contents: read
+jobs:
+  build:
+    uses: hsoliwal/ChromeLLM/.github/workflows/build-with-ai.yml@13ee0db2c9299dbf57e420efcc84a61e6de9ca44
+    with:
+      build-command: ${{ inputs.build-command }}
+      setup-command: ${{ inputs.setup-command }}
+      ai-enabled: ${{ inputs.ai-enabled }}
+      ai-runner-labels: ${{ inputs.ai-runner-labels }}
+      chrome-bin: ${{ vars.CHROME_BIN }}
+      chrome-profile: ${{ vars.CHROMELLM_CHROME_PROFILE }}
