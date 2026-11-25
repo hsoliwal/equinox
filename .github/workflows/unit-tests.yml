@@ -100,7 +100,8 @@ jobs:
           color: ${{ env.BADGE_COLOR }}
           path: tck-badge-${{ matrix.tck.name }}.svg
       - name: Upload badge of ${{ matrix.tck.label }} to Gist
-        if: github.event.workflow_run.head_branch == 'master'
+        # The badge Gist and GIST_TOKEN belong to the upstream project.
+        if: github.event.workflow_run.head_branch == 'master' && github.repository == 'eclipse-equinox/equinox'
         env:
           GITHUB_TOKEN: ${{ secrets.GIST_TOKEN }}
           GIST_ID: 'd941fe2a4992a018d88e778b48ee3135'

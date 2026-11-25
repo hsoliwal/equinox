@@ -45,6 +45,8 @@ jobs:
       uses: github/codeql-action/init@v4.39.3
       with:
         languages: ${{ matrix.language }}
+        # The repository is checked out below $GITHUB_WORKSPACE/equinox, not at its root.
+        source-root: equinox
     - name: Set up JDK
       uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
       with:
@@ -79,3 +81,4 @@ jobs:
       uses: github/codeql-action/analyze@v4.39.3
       with:
         category: "/language:${{matrix.language}}"
+        checkout_path: ${{ github.workspace }}/equinox
